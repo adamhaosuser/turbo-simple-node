@@ -6,7 +6,8 @@ app.use(express.json());
 
 app.post('/', (req, res) => {
   console.log('Received POST:', req.body);
-  res.status(200).json({ message: 'Received!' });
+  let timestamp = req.body.Created_At;
+  res.json({ createdStamp: timestamp });
 });
 
 const PORT = 3000;
