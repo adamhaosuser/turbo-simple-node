@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const crypto = require("crypto");
+require("body-parser-xml")(express);
 
 // Vars
 const SIGNING_SECRET = process.env.SECRET_KEY;
