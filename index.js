@@ -41,7 +41,18 @@ app.post('/webhook', express.raw({ type: '*/*' }), (req, res) => {
     return res.status(400).send('Invalid JSON');
   }
 
+  // Do some additional processing / logging
+  let data;
+  try {
+    data = JSON.parse(rawBody.toString('utf8'));
+    console.log('Webhook JSON:', data);
+  } catch (e) {
+    return res.status(400).send('Invalid JSON');
+  }
+
+  // All's well, respond with success
   res.send('Webhook verified!');
+  
 });
 
 app.use(express.json());
