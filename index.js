@@ -1,25 +1,10 @@
 const express = require('express');
 const app = express();
 const crypto = require("crypto");
-require("body-parser-xml")(express);
 
 // Vars
 const SIGNING_SECRET = process.env.SECRET_KEY;
 const SIGNING_SECRET_ALGORITHM = "sha256";
-
-function isValidSignature(signature, body, timestamp) {
-  let hmac = crypto.createHmac(SIGNING_SECRET_ALGORITHM, SIGNING_SECRET);
-  let sig = hmac.update(timestamp + body).digest("base64");
-
-  console.log(`${sig} Generated signature and header ${signature}`)
-  
-  return (
-    Buffer.compare(
-      Buffer.from(signature),
-      Buffer.from(sig.toString("base64"))
-    ) === 0
-  );
-}
   
 function storeRawBody(req, res, buf) {
   if (buf && buf.length) {
@@ -30,31 +15,50 @@ function storeRawBody(req, res, buf) {
 // Built-in middleware for parsing JSON bodies
 app.use(express.json());
 
-app.use(
-  express.json({
-    verify: storeRawBody,
-  })
-);
-
-app.use(express.urlencoded({ verify: storeRawBody, extended: true }));
-app.use(express.xml({ verify: storeRawBody }));
-
 app.post('/', (req, res) => {
-  const signature = req.headers["x-zendesk-webhook-signature"];
-  const timestamp = req.headers["x-zendesk-webhook-signature-timestamp"];
-  const body = req.rawBody;
 
-  console.log(`${signature} Signature, ${timestamp} Timetsamp and ${body} Body`)
-  
   console.log('Received POST:', req.body);
   let utcTimestamp = req.body.Created_At;
   res.json({ createdStamp: utcTimestamp });
+ 
+});
 
-  console.log(
-    isValidSignature(signature, body, timestamp)
-      ? "HMAC signature is valid"
-      : "HMAC signature is invalid"
-  );  
+app.post('/webhook', express.raw({ type: '*/*' }), (req, res) => {
+  const signature = req.header('X-Zendesk-Webhook-Signature');
+  const timestamp = req.header('X-Zendesk-Webhook-Signature-Timestamp');
+  const rawBody = req.body;
+
+  if (!signature || !timestamp) {
+    return res.status(400).send('Missing signature or timestamp');
+  }
+
+  const message = Buffer.concat([
+    Buffer.from(timestamp, 'utf8'),
+    Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(rawBody)
+  ]);
+
+  const expectedSignature = crypto
+    .createHmac(SIGNING_SECRET_ALGORITHM, SIGNING_SECRET)
+    .update(message)
+    .digest('base64');
+
+  const valid = crypto.timingSafeEqual(
+    Buffer.from(signature, 'base64'),
+    Buffer.from(expectedSignature, 'base64')
+  );
+
+  if (!valid) {
+    return res.status(401).send('Signature verification failed');
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(rawBody.toString('utf8'));
+  } catch (e) {
+    return res.status(400).send('Invalid JSON');
+  }
+
+  res.send('Webhook verified!');
 });
 
 app.get('/time', (req, res) => {
