@@ -42,8 +42,8 @@ app.post('/', (req, res) => {
   const body = req.rawBody;
   
   console.log('Received POST:', req.body);
-  let timestamp = req.body.Created_At;
-  res.json({ createdStamp: timestamp });
+  let utcTimestamp = req.body.Created_At;
+  res.json({ createdStamp: utcTimestamp });
 
   console.log(
     isValidSignature(signature, body, timestamp)
