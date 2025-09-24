@@ -5,23 +5,6 @@ const crypto = require("crypto");
 // Vars
 const SIGNING_SECRET = process.env.SECRET_KEY;
 const SIGNING_SECRET_ALGORITHM = "sha256";
-  
-function storeRawBody(req, res, buf) {
-  if (buf && buf.length) {
-    req.rawBody = buf.toString("utf8");
-  }
-}  
-
-// Built-in middleware for parsing JSON bodies
-app.use(express.json());
-
-app.post('/', (req, res) => {
-
-  console.log('Received POST:', req.body);
-  let utcTimestamp = req.body.Created_At;
-  res.json({ createdStamp: utcTimestamp });
- 
-});
 
 app.post('/webhook', express.raw({ type: '*/*' }), (req, res) => {
   const signature = req.header('X-Zendesk-Webhook-Signature');
@@ -59,6 +42,16 @@ app.post('/webhook', express.raw({ type: '*/*' }), (req, res) => {
   }
 
   res.send('Webhook verified!');
+});
+
+app.use(express.json());
+
+app.post('/', (req, res) => {
+
+  console.log('Received POST:', req.body);
+  let utcTimestamp = req.body.Created_At;
+  res.json({ createdStamp: utcTimestamp });
+ 
 });
 
 app.get('/time', (req, res) => {
