@@ -10,6 +10,8 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.18.0"
+    "express": "*",
+    "crypto": "*",
+    "body-parser-xml": "*"
   }
 }
