@@ -11,6 +11,8 @@ function isValidSignature(signature, body, timestamp) {
   let hmac = crypto.createHmac(SIGNING_SECRET_ALGORITHM, SIGNING_SECRET);
   let sig = hmac.update(timestamp + body).digest("base64");
 
+  console.log(`${sig} Generated signature and header ${signature}`)
+  
   return (
     Buffer.compare(
       Buffer.from(signature),
@@ -41,6 +43,8 @@ app.post('/', (req, res) => {
   const signature = req.headers["x-zendesk-webhook-signature"];
   const timestamp = req.headers["x-zendesk-webhook-signature-timestamp"];
   const body = req.rawBody;
+
+  console.log(`${signature} Signature, ${timestamp} Timetsamp and ${body} Body`)
   
   console.log('Received POST:', req.body);
   let utcTimestamp = req.body.Created_At;
